@@ -1,0 +1,93 @@
+# Iceberg REST Catalog 配置文件
+
+# 服务器配置
+server:
+  port: "8080"
+  host: "0.0.0.0"
+  environment: "development"
+
+# 数据库配置
+database:
+  type: "memory" # 支持: memory, postgres, mysql
+  host: "localhost"
+  port: 5432
+  database: "iceberg_catalog"
+  username: "postgres"
+  password: ""
+  max_connections: 10
+  connection_timeout: 30
+
+# 存储配置
+storage:
+  type: "local" # 支持: local, s3, hdfs
+  warehouse: "/tmp/warehouse"
+
+  # S3 配置
+  s3:
+    region: "us-east-1"
+    bucket: ""
+    access_key_id: ""
+    secret_access_key: ""
+    endpoint: ""
+    path_style_access: false
+
+  # HDFS 配置
+  hdfs:
+    namenode: "localhost:9000"
+    username: "hadoop"
+
+# 认证配置
+auth:
+  enabled: false
+  jwt_secret: "your-secret-key-change-this-in-production"
+  token_expiry: "24h"
+  oauth2_server: ""
+
+# 日志配置
+logging:
+  level: "info" # 支持: debug, info, warn, error
+  format: "json" # 支持: json, text
+  output: "stdout" # 支持: stdout, file
+  file_path: "/var/log/iceberg-catalog.log"
+
+# 指标配置
+metrics:
+  enabled: true
+  port: "9090"
+  path: "/metrics"
+
+# 健康检查配置
+health:
+  enabled: true
+  path: "/health"
+
+# 缓存配置
+cache:
+  enabled: true
+  type: "memory" # 支持: memory, redis
+  ttl: "1h"
+  max_size: 1000
+
+  # Redis 配置
+  redis:
+    host: "localhost"
+    port: 6379
+    password: ""
+    database: 0
+
+# 限流配置
+rate_limit:
+  enabled: false
+  requests_per_minute: 100
+  burst: 10
+
+# CORS 配置
+cors:
+  enabled: true
+  allowed_origins: ["*"]
+  allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"]
+  allowed_headers:
+    ["Content-Type", "Authorization", "X-Iceberg-Access-Delegation"]
+  exposed_headers: ["ETag"]
+  allow_credentials: false
+  max_age: 86400
