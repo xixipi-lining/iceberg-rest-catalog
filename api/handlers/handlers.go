@@ -96,7 +96,7 @@ func (h *CatalogHandler) ListNamespaces(c *gin.Context) {
 		parent = strings.Split(*req.Parent, namespaceSeparator)
 	}
 
-	namespaces, nextPageToken, err := h.catalog.ListNamespaces(c.Request.Context(), parent, req.PageToken, req.PageSize)
+	namespaces, nextPageToken, err := h.catalog.ListNamespacesPaginated(c.Request.Context(), parent, req.PageToken, req.PageSize)
 	if err != nil {
 		if errors.Is(err, catalog.ErrNamespaceNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
@@ -141,7 +141,7 @@ func (h *CatalogHandler) CreateNamespace(c *gin.Context) {
 		})
 		return
 	}
-	properties, err := h.catalog.CreateNamespace(c.Request.Context(), req.Namespace, req.Properties)
+	err := h.catalog.CreateNamespace(c.Request.Context(), req.Namespace, req.Properties)
 	if err != nil {
 		if errors.Is(err, catalog.ErrNamespaceAlreadyExists) {
 			c.JSON(http.StatusConflict, ErrorResponse{
@@ -156,7 +156,7 @@ func (h *CatalogHandler) CreateNamespace(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, createNamespaceResponse{
 		Namespace:  req.Namespace,
-		Properties: properties,
+		Properties: req.Properties,
 	})
 }
 
@@ -179,7 +179,7 @@ func (h *CatalogHandler) LoadNamespaceMetadata(c *gin.Context) {
 		return
 	}
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
-	properties, err := h.catalog.LoadNamespaceMetadata(c.Request.Context(), namespace)
+	properties, err := h.catalog.LoadNamespaceProperties(c.Request.Context(), namespace)
 	if err != nil {
 		if errors.Is(err, catalog.ErrNamespaceNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
@@ -212,7 +212,7 @@ func (h *CatalogHandler) NamespaceExists(c *gin.Context) {
 		return
 	}
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
-	exists, err := h.catalog.NamespaceExists(c.Request.Context(), namespace)
+	exists, err := h.catalog.CheckNamespaceExists(c.Request.Context(), namespace)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
@@ -301,7 +301,7 @@ func (h *CatalogHandler) UpdateProperties(c *gin.Context) {
 	}
 
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
-	updated, removed, missing, err := h.catalog.UpdateProperties(c.Request.Context(), namespace, req.Removals, req.Updates)
+	summary, err := h.catalog.UpdateNamespaceProperties(c.Request.Context(), namespace, req.Removals, req.Updates)
 	if err != nil {
 		if errors.Is(err, catalog.ErrNamespaceNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
@@ -315,9 +315,9 @@ func (h *CatalogHandler) UpdateProperties(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, updatePropertiesResponse{
-		Updated: updated,
-		Removed: removed,
-		Missing: missing,
+		Updated: summary.Updated,
+		Removed: summary.Removed,
+		Missing: summary.Missing,
 	})
 }
 
@@ -351,7 +351,7 @@ func (h *CatalogHandler) ListTables(c *gin.Context) {
 		return
 	}
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
-	tables, nextPageToken, err := h.catalog.ListTables(c.Request.Context(), namespace, req.PageToken, req.PageSize)
+	tables, nextPageToken, err := h.catalog.ListTablesPaginated(c.Request.Context(), namespace, req.PageToken, req.PageSize)
 	if err != nil {
 		if errors.Is(err, catalog.ErrNamespaceNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
@@ -387,11 +387,11 @@ func (h *CatalogHandler) CreateTable(c *gin.Context) {
 	type createTableRequest struct {
 		Prefix    string `uri:"prefix" binding:"required"`
 		Namespace string `uri:"namespace" binding:"required"`
-		Table     string `uri:"table" binding:"required"`
-		StageCreate bool `json:"stage-create"`
-		TableProperties map[string]string `json:"table-properties"`
+		Name string `json:"name" binding:"required"`
+		Location string `json:"location"`
+		TableProperties map[string]string `json:"properties"`
 	}
-
+	
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
 }
 

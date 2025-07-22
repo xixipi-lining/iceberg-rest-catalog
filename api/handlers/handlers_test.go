@@ -6,6 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/apache/iceberg-go"
+	icecat "github.com/apache/iceberg-go/catalog"
+	"github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,22 +20,22 @@ type MockCatalog struct {
 	mock.Mock
 }
 
-func (m *MockCatalog) ListNamespaces(ctx context.Context, parent []string, pageToken *string, pageSize *int) ([][]string, *string, error) {
+func (m *MockCatalog) ListNamespacesPaginated(ctx context.Context, parent []string, pageToken *string, pageSize *int) ([][]string, *string, error) {
 	args := m.Called(ctx, parent, pageToken, pageSize)
 	return args.Get(0).([][]string), args.Get(1).(*string), args.Error(2)
 }
 
-func (m *MockCatalog) CreateNamespace(ctx context.Context, namespace []string, properties map[string]string) (map[string]string, error) {
+func (m *MockCatalog) CreateNamespace(ctx context.Context, namespace table.Identifier, properties iceberg.Properties) error {
 	args := m.Called(ctx, namespace, properties)
-	return args.Get(0).(map[string]string), args.Error(1)
+	return args.Error(0)
 }
 
-func (m *MockCatalog) LoadNamespaceMetadata(ctx context.Context, namespace []string) (map[string]string, error) {
+func (m *MockCatalog) LoadNamespaceProperties(ctx context.Context, namespace table.Identifier) (iceberg.Properties, error) {
 	args := m.Called(ctx, namespace)
-	return args.Get(0).(map[string]string), args.Error(1)
+	return args.Get(0).(iceberg.Properties), args.Error(1)
 }
 
-func (m *MockCatalog) NamespaceExists(ctx context.Context, namespace []string) (bool, error) {
+func (m *MockCatalog) CheckNamespaceExists(ctx context.Context, namespace []string) (bool, error) {
 	args := m.Called(ctx, namespace)
 	return args.Get(0).(bool), args.Error(1)
 }
@@ -42,14 +45,24 @@ func (m *MockCatalog) DropNamespace(ctx context.Context, namespace []string) err
 	return args.Error(0)
 }
 
-func (m *MockCatalog) UpdateProperties(ctx context.Context, namespace []string, removals []string, updates map[string]string) ([]string, []string, []string, error) {
+func (m *MockCatalog) UpdateNamespaceProperties(ctx context.Context, namespace table.Identifier, removals []string, updates iceberg.Properties) (icecat.PropertiesUpdateSummary, error) {
 	args := m.Called(ctx, namespace, removals, updates)
-	return args.Get(0).([]string), args.Get(1).([]string), args.Get(2).([]string), args.Error(3)
+	return args.Get(0).(icecat.PropertiesUpdateSummary), args.Error(1)
 }
 
-func (m *MockCatalog) ListTables(ctx context.Context, namespace []string, pageToken *string, pageSize *int) ([][]string, *string, error) {
+func (m *MockCatalog) CheckTableExists(ctx context.Context, namespace []string) (bool, error) {
+	args := m.Called(ctx, namespace)
+	return args.Get(0).(bool), args.Error(1)
+}
+
+func (m *MockCatalog) CreateTable(ctx context.Context, identifier table.Identifier, schema *iceberg.Schema, opts ...icecat.CreateTableOpt) (*table.Table, error) {
+	args := m.Called(ctx, identifier, schema, opts)
+	return args.Get(0).(*table.Table), args.Error(1)
+}
+
+func (m *MockCatalog) ListTablesPaginated(ctx context.Context, namespace table.Identifier, pageToken *string, pageSize *int) (tables []table.Identifier, nextPageToken *string, err error) {
 	args := m.Called(ctx, namespace, pageToken, pageSize)
-	return args.Get(0).([][]string), args.Get(1).(*string), args.Error(2)
+	return args.Get(0).([]table.Identifier), args.Get(1).(*string), args.Error(2)
 }
 
 func setupRouter(catalog catalog.Catalog) *gin.Engine {
@@ -69,7 +82,7 @@ func TestListNamespaces(t *testing.T) {
 		{"accounting", "expenses"},
 	}
 
-	mockCatalog.On("ListNamespaces",
+	mockCatalog.On("ListNamespacesPaginated",
 		mock.Anything,
 		[]string{"accounting", "tax"},
 		(*string)(nil),
@@ -91,7 +104,7 @@ func TestListNamespaces(t *testing.T) {
 func TestListNamespacesWithError(t *testing.T) {
 	mockCatalog := new(MockCatalog)
 
-	mockCatalog.On("ListNamespaces",
+	mockCatalog.On("ListNamespacesPaginated",
 		mock.Anything,
 		[]string{"accounting", "tax"},
 		(*string)(nil),
@@ -117,7 +130,7 @@ func TestListNamespacesWithPagination(t *testing.T) {
 	}
 	nextPageToken := "next-page-token"
 
-	mockCatalog.On("ListNamespaces",
+	mockCatalog.On("ListNamespacesPaginated",
 		mock.Anything,
 		[]string{"accounting", "tax"},
 		&nextPageToken,
