@@ -8,12 +8,12 @@ import (
 )
 
 type Config struct {
-	Debug bool
-	FileName string
-	MaxSize int
+	Debug      bool
+	FileName   string
+	MaxSize    int
 	MaxBackups int
-	MaxAge int
-	Compress bool
+	MaxAge     int
+	Compress   bool
 }
 
 func NewLogger(cfg *Config) Logger {
@@ -27,11 +27,11 @@ func NewLogger(cfg *Config) Logger {
 	writer := zerolog.MultiLevelWriter(os.Stdout)
 	if cfg.FileName != "" {
 		lj := &lumberjack.Logger{
-			Filename: cfg.FileName,
-			MaxSize: cfg.MaxSize,
+			Filename:   cfg.FileName,
+			MaxSize:    cfg.MaxSize,
 			MaxBackups: cfg.MaxBackups,
-			MaxAge: cfg.MaxAge,
-			Compress: cfg.Compress,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
 		}
 		writer = zerolog.MultiLevelWriter(writer, lj)
 	}

@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	cfgFile string
-	envFile string
+	cfgFile   string
+	envFile   string
 	envPrefix string
 )
 
@@ -62,15 +62,14 @@ func initConfig() {
 
 func initLogger() logger.Logger {
 	return logger.NewLogger(&logger.Config{
-		Debug: viper.GetBool("log.debug"),
-		FileName: viper.GetString("log.filename"),
-		MaxSize: viper.GetInt("log.maxsize"),
+		Debug:      viper.GetBool("log.debug"),
+		FileName:   viper.GetString("log.filename"),
+		MaxSize:    viper.GetInt("log.maxsize"),
 		MaxBackups: viper.GetInt("log.maxbackups"),
-		MaxAge: viper.GetInt("log.maxage"),
-		Compress: viper.GetBool("log.compress"),
+		MaxAge:     viper.GetInt("log.maxage"),
+		Compress:   viper.GetBool("log.compress"),
 	})
 }
-
 
 func Run() {
 	initConfig()
@@ -89,4 +88,4 @@ func Run() {
 	if err := engine.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-} 
+}

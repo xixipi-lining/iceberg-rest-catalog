@@ -8,7 +8,6 @@ import (
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 )
 
-
 func Logger(log logger.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -35,4 +34,3 @@ func Logger(log logger.Logger) gin.HandlerFunc {
 			Info("request")
 	}
 }
-

@@ -1,6 +1,5 @@
 package logger
 
-
 type Logger interface {
 	Info(msg string, fields ...Field)
 	Infof(format string, args ...any)
@@ -25,6 +24,6 @@ type Logger interface {
 }
 
 type Field struct {
-	Key string
+	Key   string
 	Value any
 }

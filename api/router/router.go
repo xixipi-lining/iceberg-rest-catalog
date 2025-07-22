@@ -32,7 +32,7 @@ func Setup(log logger.Logger) *gin.Engine {
 			{
 				namespaces.GET("", handler.ListNamespaces)
 				namespaces.POST("", handler.CreateNamespace)
-				
+
 				namespace := namespaces.Group("/:namespace")
 				{
 					namespace.GET("", handler.LoadNamespaceMetadata)
@@ -68,4 +68,4 @@ func Setup(log logger.Logger) *gin.Engine {
 	})
 
 	return engine
-} 
+}
