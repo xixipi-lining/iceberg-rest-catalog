@@ -32,6 +32,26 @@ func (m *MockCatalog) LoadNamespaceMetadata(ctx context.Context, namespace []str
 	return args.Get(0).(map[string]string), args.Error(1)
 }
 
+func (m *MockCatalog) NamespaceExists(ctx context.Context, namespace []string) (bool, error) {
+	args := m.Called(ctx, namespace)
+	return args.Get(0).(bool), args.Error(1)
+}
+
+func (m *MockCatalog) DropNamespace(ctx context.Context, namespace []string) error {
+	args := m.Called(ctx, namespace)
+	return args.Error(0)
+}
+
+func (m *MockCatalog) UpdateProperties(ctx context.Context, namespace []string, removals []string, updates map[string]string) ([]string, []string, []string, error) {
+	args := m.Called(ctx, namespace, removals, updates)
+	return args.Get(0).([]string), args.Get(1).([]string), args.Get(2).([]string), args.Error(3)
+}
+
+func (m *MockCatalog) ListTables(ctx context.Context, namespace []string, pageToken *string, pageSize *int) ([][]string, *string, error) {
+	args := m.Called(ctx, namespace, pageToken, pageSize)
+	return args.Get(0).([][]string), args.Get(1).(*string), args.Error(2)
+}
+
 func setupRouter(catalog catalog.Catalog) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
