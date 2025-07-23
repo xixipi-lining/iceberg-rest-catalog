@@ -2388,25 +2388,6 @@ components:
           items:
             $ref: '#/components/schemas/SortField'
 
-    EncryptedKey:
-      type: object
-      required:
-        - key-id
-        - encrypted-key-metadata
-      properties:
-        key-id:
-          type: string
-        encrypted-key-metadata:
-          type: string
-          format: byte # for compatibility
-          contentEncoding: base64
-        encrypted-by-id:
-          type: string
-        properties:
-          type: object
-          additionalProperties:
-            type: string
-
     Snapshot:
       type: object
       required:
@@ -2430,10 +2411,6 @@ components:
         manifest-list:
           type: string
           description: Location of the snapshot's manifest list file
-        first-row-id:
-          type: integer
-          format: int64
-          description: The first _row_id assigned to the first row in the first data file in the first manifest
         summary:
           type: object
           required:
@@ -2519,10 +2496,6 @@ components:
         last-updated-ms:
           type: integer
           format: int64
-        next-row-id:
-          type: integer
-          format: int64
-          description: A long higher than all assigned row IDs; the next snapshot's first-row-id.
         properties:
           type: object
           additionalProperties:
@@ -2552,11 +2525,6 @@ components:
             $ref: '#/components/schemas/SortOrder'
         default-sort-order-id:
           type: integer
-        # encryption
-        encryption-keys:
-          type: list
-          items:
-            $ref: '#/components/schemas/EncryptedKey'
         # snapshot tracking
         snapshots:
           type: array
@@ -2711,8 +2679,7 @@ components:
           remove-partition-statistics: '#/components/schemas/RemovePartitionStatisticsUpdate'
           remove-partition-specs: '#/components/schemas/RemovePartitionSpecsUpdate'
           remove-schemas: '#/components/schemas/RemoveSchemasUpdate'
-          add-encryption-key: '#/components/schemas/AddEncryptionKeyUpdate'
-          remove-encryption-key: '#/components/schemas/RemoveEncryptionKeyUpdate'
+          enable-row-lineage: '#/components/schemas/EnableRowLineageUpdate'
       type: object
       required:
         - action
@@ -3031,29 +2998,14 @@ components:
           items:
             type: integer
 
-    AddEncryptionKeyUpdate:
+    # Disabling Row Lineage is Forbidden
+    EnableRowLineageUpdate:
       allOf:
         - $ref: '#/components/schemas/BaseUpdate'
-      required:
-        - encryption-key
       properties:
         action:
           type: string
-          const: "add-encryption-key"
-        encryption-key:
-          $ref: '#/components/schemas/EncryptedKey'
-
-    RemoveEncryptionKeyUpdate:
-      allOf:
-        - $ref: '#/components/schemas/BaseUpdate'
-      required:
-        - key-id
-      properties:
-        action:
-          type: string
-          const: "remove-encryption-key"
-        key-id:
-          type: string
+          const: "enable-row-lineage"
 
     TableUpdate:
       anyOf:
@@ -3076,8 +3028,7 @@ components:
         - $ref: '#/components/schemas/RemoveStatisticsUpdate'
         - $ref: '#/components/schemas/RemovePartitionSpecsUpdate'
         - $ref: '#/components/schemas/RemoveSchemasUpdate'
-        - $ref: '#/components/schemas/AddEncryptionKeyUpdate'
-        - $ref: '#/components/schemas/RemoveEncryptionKeyUpdate'
+        - $ref: '#/components/schemas/EnableRowLineageUpdate'
 
     ViewUpdate:
       anyOf:
@@ -4307,10 +4258,6 @@ components:
         content:
           type: string
           const: "data"
-        first-row-id:
-          type: integer
-          format: int64
-          description: "The first row ID assigned to the first row in the data file"
         column-sizes:
           allOf:
             - $ref: '#/components/schemas/CountMap'
@@ -4520,9 +4467,7 @@ components:
     #  The fields `message` and `type` as indicated here are not presently prescriptive.
     UnauthorizedResponse:
       description:
-        Unauthorized. The REST Catalog SHOULD respond with the 401 UnauthorizedResponse when
-        the access token provided is expired, revoked, malformed, or invalid for other reasons.
-        The client MAY request a new access token and retry the request.
+        Unauthorized. Authentication is required and has failed or has not yet been provided.
       content:
         application/json:
           schema:
@@ -4630,9 +4575,7 @@ components:
 
     AuthenticationTimeoutResponse:
       description:
-        This is an optional status response type that the REST Catalog can issue when the
-        token has expired. The client MAY request a new access token and retry the request.
-        401 UnauthorizedResponse SHOULD be preferred over this response type on token expiry.
+        Credentials have timed out. If possible, the client should refresh credentials and retry.
       content:
         application/json:
           schema:

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -10,6 +11,10 @@ import (
 )
 
 const namespaceSeparator = "\x1F"
+
+const (
+	SchemaTypeStruct SchemaType = "struct"
+)
 
 type ErrorResponse struct {
 	Error ErrorModel `json:"error"`
@@ -323,18 +328,18 @@ func (h *CatalogHandler) UpdateProperties(c *gin.Context) {
 
 func (h *CatalogHandler) ListTables(c *gin.Context) {
 	type listTablesRequest struct {
-		Prefix    string `uri:"prefix" binding:"required"`
-		Namespace string `uri:"namespace" binding:"required"`
+		Prefix    string  `uri:"prefix" binding:"required"`
+		Namespace string  `uri:"namespace" binding:"required"`
 		PageToken *string `form:"pageToken"`
 		PageSize  *int    `form:"pageSize"`
 	}
 
 	type listTablesResponse struct {
-		Identifiers   []struct {
+		Identifiers []struct {
 			Namespace []string `json:"namespace"`
 			Name      string   `json:"name"`
 		} `json:"identifiers"`
-		NextPageToken *string    `json:"next-page-token"`
+		NextPageToken *string `json:"next-page-token"`
 	}
 
 	var req listTablesRequest
@@ -383,15 +388,73 @@ func (h *CatalogHandler) ListTables(c *gin.Context) {
 	})
 }
 
+type Type struct {
+	union json.RawMessage
+}
+
+type StructField struct {
+	Doc      *string `json:"doc,omitempty"`
+	Id       int     `json:"id"`
+	Name     string  `json:"name"`
+	Required bool    `json:"required"`
+	Type     Type    `json:"type"`
+}
+
+type Schema struct {
+	Fields             []StructField `json:"fields"`
+	IdentifierFieldIds *[]int        `json:"identifier-field-ids,omitempty"`
+	SchemaId           *int          `json:"schema-id,omitempty"`
+	Type               SchemaType    `json:"type"`
+}
+
+type SchemaType string
+
+type Transform = string
+
+type PartitionField struct {
+	FieldId   *int      `json:"field-id,omitempty"`
+	Name      string    `json:"name"`
+	SourceId  int       `json:"source-id"`
+	Transform Transform `json:"transform"`
+}
+
+// PartitionSpec defines model for PartitionSpec.
+type PartitionSpec struct {
+	Fields []PartitionField `json:"fields"`
+	SpecId *int             `json:"spec-id,omitempty"`
+}
+
+type SortDirection string
+
+type NullOrder string
+
+// SortField defines model for SortField.
+type SortField struct {
+	Direction SortDirection `json:"direction"`
+	NullOrder NullOrder     `json:"null-order"`
+	SourceId  int           `json:"source-id"`
+	Transform Transform     `json:"transform"`
+}
+
+// SortOrder defines model for SortOrder.
+type SortOrder struct {
+	Fields  []SortField `json:"fields"`
+	OrderId *int        `json:"order-id,omitempty"`
+}
+
 func (h *CatalogHandler) CreateTable(c *gin.Context) {
 	type createTableRequest struct {
-		Prefix    string `uri:"prefix" binding:"required"`
-		Namespace string `uri:"namespace" binding:"required"`
-		Name string `json:"name" binding:"required"`
-		Location string `json:"location"`
+		Prefix          string            `uri:"prefix" binding:"required"`
+		Namespace       string            `uri:"namespace" binding:"required"`
+		Name            string            `json:"name" binding:"required"`
+		Location        string            `json:"location"`
+		Schema          Schema            `json:"schema" binding:"required"`
+		PartitionSpec   PartitionSpec     `json:"partition-spec"`
+		WriteOrder      SortOrder         `json:"write-order"`
+		StageCreate     bool              `json:"stage-create"`
 		TableProperties map[string]string `json:"properties"`
 	}
-	
+
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
 }
 
