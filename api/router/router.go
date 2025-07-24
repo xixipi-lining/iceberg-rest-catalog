@@ -22,7 +22,7 @@ func Setup(log logger.Logger) *gin.Engine {
 	v1 := engine.Group("/v1")
 	{
 		// 配置 API
-		// v1.GET("/config", handler.GetConfig)
+		v1.GET("/config", handler.GetConfig)
 
 		// 带前缀的路由组
 		prefixGroup := v1.Group("/:prefix")
