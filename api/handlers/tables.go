@@ -9,14 +9,10 @@ import (
 
 	"github.com/apache/iceberg-go"
 	icecat "github.com/apache/iceberg-go/catalog"
-	"github.com/apache/iceberg-go/table"
+	icetbl "github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
-)
-
-const (
-	SchemaTypeStruct SchemaType = "struct"
 )
 
 type Config struct {
@@ -123,7 +119,7 @@ type CreateTableRequest struct {
 	Schema        *iceberg.Schema        `json:"schema"`
 	Location      string                 `json:"location,omitempty"`
 	PartitionSpec *iceberg.PartitionSpec `json:"partition-spec,omitempty"`
-	WriteOrder    *table.SortOrder       `json:"write-order,omitempty"`
+	WriteOrder    *icetbl.SortOrder      `json:"write-order,omitempty"`
 	StageCreate   bool                   `json:"stage-create"`
 	Props         iceberg.Properties     `json:"properties,omitempty"`
 }
@@ -211,76 +207,282 @@ func (h *CatalogHandler) CreateTable(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-type Type struct {
-	union json.RawMessage
-}
+func (h *CatalogHandler) UpdateTable(c *gin.Context) {
+	log := c.MustGet("logger").(logger.Logger)
 
-type StructField struct {
-	Doc      *string `json:"doc,omitempty"`
-	Id       int     `json:"id"`
-	Name     string  `json:"name"`
-	Required bool    `json:"required"`
-	Type     Type    `json:"type"`
-}
+	prefix := c.Param("prefix")
+	if prefix != "" {
+		log.Warn("prefix query parameter is not supported")
+	}
 
-type Schema struct {
-	Fields             []StructField `json:"fields"`
-	IdentifierFieldIds *[]int        `json:"identifier-field-ids,omitempty"`
-	SchemaId           *int          `json:"schema-id,omitempty"`
-	Type               SchemaType    `json:"type"`
-}
+	namespace := c.Param("namespace")
+	ns := strings.Split(namespace, namespaceSeparator)
 
-type SchemaType string
+	tableName := c.Param("table")
+	if tableName == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrBadRequest,
+		})
+		return
+	}
 
-type Transform = string
+	var req UpdateTableRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Errorf("failed to bind json: %w", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrBadRequest,
+		})
+		return
+	}
 
-type PartitionField struct {
-	FieldId   *int      `json:"field-id,omitempty"`
-	Name      string    `json:"name"`
-	SourceId  int       `json:"source-id"`
-	Transform Transform `json:"transform"`
-}
+	table, err := h.catalog.LoadTable(c.Request.Context(), append(ns, tableName), nil)
+	if err != nil {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrNamespaceNotFound,
+			})
+			return
+		}
+		if errors.Is(err, icecat.ErrNoSuchTable) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrTableNotFound,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
 
-// PartitionSpec defines model for PartitionSpec.
-type PartitionSpec struct {
-	Fields []PartitionField `json:"fields"`
-	SpecId *int             `json:"spec-id,omitempty"`
-}
+	metadata, metadataLoc, err := h.catalog.CommitTable(c.Request.Context(), table, req.Requirements, req.Updates)
+	if err != nil {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrNamespaceNotFound,
+			})
+			return
+		}
+		if errors.Is(err, icecat.ErrNoSuchTable) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrTableNotFound,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
 
-type SortDirection string
+	metadataBytes, err := json.Marshal(metadata)
+	if err != nil {
+		log.Errorf("failed to marshal metadata: %w", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
+	resp := UpdateTableResponse{
+		MetadataLoc: metadataLoc,
+		Metadata:    metadataBytes,
+	}
 
-type NullOrder string
-
-// SortField defines model for SortField.
-type SortField struct {
-	Direction SortDirection `json:"direction"`
-	NullOrder NullOrder     `json:"null-order"`
-	SourceId  int           `json:"source-id"`
-	Transform Transform     `json:"transform"`
-}
-
-// SortOrder defines model for SortOrder.
-type SortOrder struct {
-	Fields  []SortField `json:"fields"`
-	OrderId *int        `json:"order-id,omitempty"`
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *CatalogHandler) LoadTable(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
-}
+	log := c.MustGet("logger").(logger.Logger)
 
-func (h *CatalogHandler) UpdateTable(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
+	prefix := c.Param("prefix")
+	if prefix != "" {
+		log.Warn("prefix query parameter is not supported")
+	}
+
+	namespace := c.Param("namespace")
+	ns := strings.Split(namespace, namespaceSeparator)
+
+	tableName := c.Param("table")
+
+	table, err := h.catalog.LoadTable(c.Request.Context(), append(ns, tableName), nil)
+	if err != nil {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrNamespaceNotFound,
+			})
+			return
+		}
+		if errors.Is(err, icecat.ErrNoSuchTable) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrTableNotFound,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
+
+	metadata, err := json.Marshal(table.Metadata())
+	if err != nil {
+		log.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	resp := LoadTableResponse{
+		MetadataLoc: table.MetadataLocation(),
+		Metadata:    metadata,
+		Config:      table.Properties(),
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *CatalogHandler) DropTable(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
+	log := c.MustGet("logger").(logger.Logger)
+
+	prefix := c.Param("prefix")
+	if prefix != "" {
+		log.Warn("prefix query parameter is not supported")
+	}
+
+	namespace := c.Param("namespace")
+	ns := strings.Split(namespace, namespaceSeparator)
+
+	tableName := c.Param("table")
+	if tableName == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrBadRequest,
+		})
+		return
+	}
+
+	purgeRequested := c.Query("purgeRequested")
+	if purgeRequested == "true" {
+		log.Warn("purgeRequested query parameter is not supported")
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrNotImplemented,
+		})
+		return
+	}
+
+	err := h.catalog.DropTable(c.Request.Context(), append(ns, tableName))
+	if err != nil {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrNamespaceNotFound,
+			})
+			return
+		}
+		if errors.Is(err, icecat.ErrNoSuchTable) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrTableNotFound,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
 }
 
 func (h *CatalogHandler) TableExists(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
+	log := c.MustGet("logger").(logger.Logger)
+
+	prefix := c.Param("prefix")
+	if prefix != "" {
+		log.Warn("prefix query parameter is not supported")
+	}
+
+	namespace := c.Param("namespace")
+	ns := strings.Split(namespace, namespaceSeparator)
+
+	tableName := c.Param("table")
+	if tableName == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrBadRequest,
+		})
+		return
+	}
+
+	exists, err := h.catalog.CheckTableExists(c.Request.Context(), append(ns, tableName))
+	if err != nil {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrNamespaceNotFound,
+			})
+			return
+		}
+		if errors.Is(err, icecat.ErrNoSuchTable) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrTableNotFound,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
+
+	if !exists {
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Error: ErrTableNotFound,
+		})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+type RenameTableRequest struct {
+	Source      Identifier `json:"source"`
+	Destination Identifier `json:"destination"`
 }
 
 func (h *CatalogHandler) RenameTable(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
+	log := c.MustGet("logger").(logger.Logger)
+
+	prefix := c.Param("prefix")
+	if prefix != "" {
+		log.Warn("prefix query parameter is not supported")
+	}
+
+	var req RenameTableRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Errorf("failed to bind json: %w", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: ErrBadRequest,
+		})
+		return
+	}
+
+	_, err := h.catalog.RenameTable(
+		c.Request.Context(),
+		append(req.Source.Namespace, req.Source.Name),
+		append(req.Destination.Namespace, req.Destination.Name),
+	)
+	if err != nil {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrNamespaceNotFound,
+			})
+			return
+		}
+		if errors.Is(err, icecat.ErrNoSuchTable) {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: ErrTableNotFound,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: ErrInternalServerError,
+		})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

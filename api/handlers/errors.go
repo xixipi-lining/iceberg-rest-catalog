@@ -59,3 +59,9 @@ var ErrTableAlreadyExists = ErrorModel{
 	Type:    "AlreadyExistsException",
 	Code:    http.StatusConflict,
 }
+
+var ErrTableNotFound = ErrorModel{
+	Message: "The given table does not exist",
+	Type:    "NoSuchTableException",
+	Code:    http.StatusNotFound,
+}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/apache/iceberg-go"
 	icecat "github.com/apache/iceberg-go/catalog"
-	"github.com/apache/iceberg-go/table"
+	icetbl "github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,12 +25,12 @@ func (m *MockCatalog) ListNamespacesPaginated(ctx context.Context, parent []stri
 	return args.Get(0).([][]string), args.Get(1).(*string), args.Error(2)
 }
 
-func (m *MockCatalog) CreateNamespace(ctx context.Context, namespace table.Identifier, properties iceberg.Properties) error {
+func (m *MockCatalog) CreateNamespace(ctx context.Context, namespace icetbl.Identifier, properties iceberg.Properties) error {
 	args := m.Called(ctx, namespace, properties)
 	return args.Error(0)
 }
 
-func (m *MockCatalog) LoadNamespaceProperties(ctx context.Context, namespace table.Identifier) (iceberg.Properties, error) {
+func (m *MockCatalog) LoadNamespaceProperties(ctx context.Context, namespace icetbl.Identifier) (iceberg.Properties, error) {
 	args := m.Called(ctx, namespace)
 	return args.Get(0).(iceberg.Properties), args.Error(1)
 }
@@ -45,7 +45,7 @@ func (m *MockCatalog) DropNamespace(ctx context.Context, namespace []string) err
 	return args.Error(0)
 }
 
-func (m *MockCatalog) UpdateNamespaceProperties(ctx context.Context, namespace table.Identifier, removals []string, updates iceberg.Properties) (icecat.PropertiesUpdateSummary, error) {
+func (m *MockCatalog) UpdateNamespaceProperties(ctx context.Context, namespace icetbl.Identifier, removals []string, updates iceberg.Properties) (icecat.PropertiesUpdateSummary, error) {
 	args := m.Called(ctx, namespace, removals, updates)
 	return args.Get(0).(icecat.PropertiesUpdateSummary), args.Error(1)
 }
@@ -55,14 +55,34 @@ func (m *MockCatalog) CheckTableExists(ctx context.Context, namespace []string) 
 	return args.Get(0).(bool), args.Error(1)
 }
 
-func (m *MockCatalog) CreateTable(ctx context.Context, identifier table.Identifier, schema *iceberg.Schema, opts ...icecat.CreateTableOpt) (*table.Table, error) {
+func (m *MockCatalog) CreateTable(ctx context.Context, identifier icetbl.Identifier, schema *iceberg.Schema, opts ...icecat.CreateTableOpt) (*icetbl.Table, error) {
 	args := m.Called(ctx, identifier, schema, opts)
-	return args.Get(0).(*table.Table), args.Error(1)
+	return args.Get(0).(*icetbl.Table), args.Error(1)
 }
 
-func (m *MockCatalog) ListTablesPaginated(ctx context.Context, namespace table.Identifier, pageToken *string, pageSize *int) (tables []table.Identifier, nextPageToken *string, err error) {
+func (m *MockCatalog) ListTablesPaginated(ctx context.Context, namespace icetbl.Identifier, pageToken *string, pageSize *int) (tables []icetbl.Identifier, nextPageToken *string, err error) {
 	args := m.Called(ctx, namespace, pageToken, pageSize)
-	return args.Get(0).([]table.Identifier), args.Get(1).(*string), args.Error(2)
+	return args.Get(0).([]icetbl.Identifier), args.Get(1).(*string), args.Error(2)
+}
+
+func (m *MockCatalog) CommitTable(ctx context.Context, table *icetbl.Table, requirements []icetbl.Requirement, updates []icetbl.Update) (icetbl.Metadata, string, error) {
+	args := m.Called(ctx, table, requirements, updates)
+	return args.Get(0).(icetbl.Metadata), args.Get(1).(string), args.Error(2)
+}
+
+func (m *MockCatalog) LoadTable(ctx context.Context, identifier icetbl.Identifier, props iceberg.Properties) (*icetbl.Table, error) {
+	args := m.Called(ctx, identifier, props)
+	return args.Get(0).(*icetbl.Table), args.Error(1)
+}
+
+func (m *MockCatalog) DropTable(ctx context.Context, identifier icetbl.Identifier) error {
+	args := m.Called(ctx, identifier)
+	return args.Error(0)
+}
+
+func (m *MockCatalog) RenameTable(ctx context.Context, from, to icetbl.Identifier) (*icetbl.Table, error) {
+	args := m.Called(ctx, from, to)
+	return args.Get(0).(*icetbl.Table), args.Error(1)
 }
 
 func setupRouter(catalog catalog.Catalog) *gin.Engine {
