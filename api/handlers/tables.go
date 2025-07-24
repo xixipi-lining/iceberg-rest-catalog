@@ -7,9 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apache/iceberg-go"
 	icecat "github.com/apache/iceberg-go/catalog"
-	icetbl "github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
@@ -112,22 +110,6 @@ func (h *CatalogHandler) ListTables(c *gin.Context) {
 		Identifiers:   resTables,
 		NextPageToken: *nextPageToken,
 	})
-}
-
-type CreateTableRequest struct {
-	Name          string                 `json:"name"`
-	Schema        *iceberg.Schema        `json:"schema"`
-	Location      string                 `json:"location,omitempty"`
-	PartitionSpec *iceberg.PartitionSpec `json:"partition-spec,omitempty"`
-	WriteOrder    *icetbl.SortOrder      `json:"write-order,omitempty"`
-	StageCreate   bool                   `json:"stage-create"`
-	Props         iceberg.Properties     `json:"properties,omitempty"`
-}
-
-type LoadTableResponse struct {
-	MetadataLoc string             `json:"metadata-location"`
-	Metadata    json.RawMessage    `json:"metadata"`
-	Config      iceberg.Properties `json:"config"`
 }
 
 func (h *CatalogHandler) CreateTable(c *gin.Context) {
@@ -436,11 +418,6 @@ func (h *CatalogHandler) TableExists(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
-}
-
-type RenameTableRequest struct {
-	Source      Identifier `json:"source"`
-	Destination Identifier `json:"destination"`
 }
 
 func (h *CatalogHandler) RenameTable(c *gin.Context) {
