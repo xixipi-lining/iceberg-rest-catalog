@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 
-	"github.com/apache/iceberg-go"
-	"github.com/apache/iceberg-go/table"
+	"github.com/xixipi-lining/iceberg-go"
+	"github.com/xixipi-lining/iceberg-go/table"
 )
 
 const namespaceSeparator = "\x1F"
@@ -18,7 +18,7 @@ type Identifier struct {
 
 type ListTablesResponse struct {
 	Identifiers   []Identifier `json:"identifiers"`
-	NextPageToken string       `json:"next-page-token,omitempty"`
+	NextPageToken *string       `json:"next-page-token,omitempty"`
 }
 
 type CreateTableRequest struct {

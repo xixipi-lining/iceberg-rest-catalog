@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	icecat "github.com/apache/iceberg-go/catalog"
 	"github.com/gin-gonic/gin"
+	icecat "github.com/xixipi-lining/iceberg-go/catalog"
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
 )
@@ -108,7 +108,7 @@ func (h *CatalogHandler) ListTables(c *gin.Context) {
 
 	c.JSON(http.StatusOK, ListTablesResponse{
 		Identifiers:   resTables,
-		NextPageToken: *nextPageToken,
+		NextPageToken: nextPageToken,
 	})
 }
 

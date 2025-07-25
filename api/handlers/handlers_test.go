@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apache/iceberg-go"
-	icecat "github.com/apache/iceberg-go/catalog"
-	icetbl "github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/xixipi-lining/iceberg-go"
+	icecat "github.com/xixipi-lining/iceberg-go/catalog"
+	icetbl "github.com/xixipi-lining/iceberg-go/table"
 	"github.com/xixipi-lining/iceberg-rest-catalog/api/handlers"
 	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
 )
@@ -129,7 +129,7 @@ func TestListNamespacesWithError(t *testing.T) {
 		[]string{"accounting", "tax"},
 		(*string)(nil),
 		(*int)(nil),
-	).Return([][]string(nil), (*string)(nil), catalog.ErrNamespaceNotFound)
+	).Return([][]string(nil), (*string)(nil), icecat.ErrNoSuchNamespace)
 
 	router := setupRouter(mockCatalog)
 

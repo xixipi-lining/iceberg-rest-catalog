@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
+	icecat "github.com/xixipi-lining/iceberg-go/catalog"
 )
 
 func (h *CatalogHandler) ListNamespaces(c *gin.Context) {
@@ -42,7 +42,7 @@ func (h *CatalogHandler) ListNamespaces(c *gin.Context) {
 
 	namespaces, nextPageToken, err := h.catalog.ListNamespacesPaginated(c.Request.Context(), parent, req.PageToken, req.PageSize)
 	if err != nil {
-		if errors.Is(err, catalog.ErrNamespaceNotFound) {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
@@ -87,7 +87,7 @@ func (h *CatalogHandler) CreateNamespace(c *gin.Context) {
 	}
 	err := h.catalog.CreateNamespace(c.Request.Context(), req.Namespace, req.Properties)
 	if err != nil {
-		if errors.Is(err, catalog.ErrNamespaceAlreadyExists) {
+		if errors.Is(err, icecat.ErrNamespaceAlreadyExists) {
 			c.JSON(http.StatusConflict, ErrorResponse{
 				Error: ErrNamespaceAlreadyExists,
 			})
@@ -125,7 +125,7 @@ func (h *CatalogHandler) LoadNamespaceMetadata(c *gin.Context) {
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
 	properties, err := h.catalog.LoadNamespaceProperties(c.Request.Context(), namespace)
 	if err != nil {
-		if errors.Is(err, catalog.ErrNamespaceNotFound) {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
@@ -187,13 +187,13 @@ func (h *CatalogHandler) DropNamespace(c *gin.Context) {
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
 	err := h.catalog.DropNamespace(c.Request.Context(), namespace)
 	if err != nil {
-		if errors.Is(err, catalog.ErrNamespaceNotFound) {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
 			return
 		}
-		if errors.Is(err, catalog.ErrNamespaceNotEmpty) {
+		if errors.Is(err, icecat.ErrNamespaceNotEmpty) {
 			c.JSON(http.StatusConflict, ErrorResponse{
 				Error: ErrNamespaceNotEmpty,
 			})
@@ -247,7 +247,7 @@ func (h *CatalogHandler) UpdateProperties(c *gin.Context) {
 	namespace := strings.Split(req.Namespace, namespaceSeparator)
 	summary, err := h.catalog.UpdateNamespaceProperties(c.Request.Context(), namespace, req.Removals, req.Updates)
 	if err != nil {
-		if errors.Is(err, catalog.ErrNamespaceNotFound) {
+		if errors.Is(err, icecat.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})

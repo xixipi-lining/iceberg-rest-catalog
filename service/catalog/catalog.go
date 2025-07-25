@@ -2,16 +2,11 @@ package catalog
 
 import (
 	"context"
-	"errors"
 
-	"github.com/apache/iceberg-go"
-	"github.com/apache/iceberg-go/catalog"
-	"github.com/apache/iceberg-go/table"
+	"github.com/xixipi-lining/iceberg-go"
+	"github.com/xixipi-lining/iceberg-go/catalog"
+	"github.com/xixipi-lining/iceberg-go/table"
 )
-
-var ErrNamespaceNotFound = errors.New("namespace not found")
-var ErrNamespaceAlreadyExists = errors.New("namespace already exists")
-var ErrNamespaceNotEmpty = errors.New("namespace is not empty")
 
 type Catalog interface {
 	// CreateTable creates a new iceberg table in the catalog using the provided identifier
