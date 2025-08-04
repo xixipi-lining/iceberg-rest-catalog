@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	icecat "github.com/apache/iceberg-go/catalog"
 	"github.com/gin-gonic/gin"
-	icecat "github.com/xixipi-lining/iceberg-go/catalog"
 )
 
 func (h *CatalogHandler) ListNamespaces(c *gin.Context) {

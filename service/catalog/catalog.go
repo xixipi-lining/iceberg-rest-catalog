@@ -3,9 +3,9 @@ package catalog
 import (
 	"context"
 
-	"github.com/xixipi-lining/iceberg-go"
-	"github.com/xixipi-lining/iceberg-go/catalog"
-	"github.com/xixipi-lining/iceberg-go/table"
+	"github.com/apache/iceberg-go"
+	"github.com/apache/iceberg-go/catalog"
+	"github.com/apache/iceberg-go/table"
 )
 
 type Catalog interface {
@@ -41,4 +41,6 @@ type Catalog interface {
 	LoadNamespaceProperties(ctx context.Context, namespace table.Identifier) (iceberg.Properties, error)
 	// UpdateNamespaceProperties allows removing, adding, and/or updating properties of a namespace
 	UpdateNamespaceProperties(ctx context.Context, namespace table.Identifier, removals []string, updates iceberg.Properties) (catalog.PropertiesUpdateSummary, error)
+
+	MultiTableCommit(ctx context.Context, commits []catalog.MultiTableCommit, syncTo catalog.FollowerCatalog) error 
 }

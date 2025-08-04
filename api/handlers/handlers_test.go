@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/apache/iceberg-go"
+	icecat "github.com/apache/iceberg-go/catalog"
+	icetbl "github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/xixipi-lining/iceberg-go"
-	icecat "github.com/xixipi-lining/iceberg-go/catalog"
-	icetbl "github.com/xixipi-lining/iceberg-go/table"
 	"github.com/xixipi-lining/iceberg-rest-catalog/api/handlers"
 	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
 )
@@ -83,6 +83,11 @@ func (m *MockCatalog) DropTable(ctx context.Context, identifier icetbl.Identifie
 func (m *MockCatalog) RenameTable(ctx context.Context, from, to icetbl.Identifier) (*icetbl.Table, error) {
 	args := m.Called(ctx, from, to)
 	return args.Get(0).(*icetbl.Table), args.Error(1)
+}
+
+func (m *MockCatalog) MultiTableCommit(ctx context.Context, commits []icecat.MultiTableCommit, syncTo icecat.FollowerCatalog) error {
+	args := m.Called(ctx, commits, syncTo)
+	return args.Error(0)
 }
 
 func setupRouter(catalog catalog.Catalog) *gin.Engine {

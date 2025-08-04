@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 
-	"github.com/xixipi-lining/iceberg-go"
-	"github.com/xixipi-lining/iceberg-go/table"
+	"github.com/apache/iceberg-go"
+	"github.com/apache/iceberg-go/table"
 )
 
 const namespaceSeparator = "\x1F"

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	icecat "github.com/apache/iceberg-go/catalog"
 	"github.com/gin-gonic/gin"
-	icecat "github.com/xixipi-lining/iceberg-go/catalog"
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 	"github.com/xixipi-lining/iceberg-rest-catalog/service/catalog"
 )
@@ -20,7 +20,7 @@ type Config struct {
 
 type CatalogHandler struct {
 	config  Config
-	catalog catalog.Catalog
+	catalog catalog.Catalog 
 }
 
 func NewCatalogHandler(catalog catalog.Catalog) *CatalogHandler {
