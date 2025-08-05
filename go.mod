@@ -2,7 +2,7 @@ module github.com/xixipi-lining/iceberg-rest-catalog
 
 go 1.24.4
 
-replace github.com/apache/iceberg-go => github.com/xixipi-lining/iceberg-go v0.1.1
+replace github.com/apache/iceberg-go => github.com/xixipi-lining/iceberg-go v0.1.2
 
 require (
 	github.com/apache/iceberg-go v0.0.0-00010101000000-000000000000

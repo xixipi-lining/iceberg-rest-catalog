@@ -42,5 +42,5 @@ type Catalog interface {
 	// UpdateNamespaceProperties allows removing, adding, and/or updating properties of a namespace
 	UpdateNamespaceProperties(ctx context.Context, namespace table.Identifier, removals []string, updates iceberg.Properties) (catalog.PropertiesUpdateSummary, error)
 
-	MultiTableCommit(ctx context.Context, commits []catalog.MultiTableCommit, syncTo catalog.FollowerCatalog) error 
+	CommitTables(ctx context.Context, commits []table.TableCommit) error
 }

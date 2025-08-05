@@ -85,8 +85,8 @@ func (m *MockCatalog) RenameTable(ctx context.Context, from, to icetbl.Identifie
 	return args.Get(0).(*icetbl.Table), args.Error(1)
 }
 
-func (m *MockCatalog) MultiTableCommit(ctx context.Context, commits []icecat.MultiTableCommit, syncTo icecat.FollowerCatalog) error {
-	args := m.Called(ctx, commits, syncTo)
+func (m *MockCatalog) CommitTables(ctx context.Context, commits []icetbl.TableCommit) error {
+	args := m.Called(ctx, commits)
 	return args.Error(0)
 }
 

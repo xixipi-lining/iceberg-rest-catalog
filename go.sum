@@ -633,8 +633,8 @@ github.com/xeipuuv/gojsonschema v1.2.0 h1:LhYJRs+L4fBtjZUfuSZIKGeVu0QRy8e5Xi7D17
 github.com/xeipuuv/gojsonschema v1.2.0/go.mod h1:anYRn/JVcOK2ZgGU+IjEV4nwlhoK5sQluxsYJ78Id3Y=
 github.com/xhit/go-str2duration/v2 v2.1.0 h1:lxklc02Drh6ynqX+DdPyp5pCKLUQpRT8bp8Ydu2Bstc=
 github.com/xhit/go-str2duration/v2 v2.1.0/go.mod h1:ohY8p+0f07DiV6Em5LKB0s2YpLtXVyJfNt1+BlmyAsU=
-github.com/xixipi-lining/iceberg-go v0.1.1 h1:7jydHLjEIQURlNy0IGjBZMW0ZB/2JzCcwQDxbVJny88=
-github.com/xixipi-lining/iceberg-go v0.1.1/go.mod h1:Mtu9RUzhUn4g1ESKZhS/Xe4BQHt+HbArRm5CMucEXSs=
+github.com/xixipi-lining/iceberg-go v0.1.2 h1:A72qciDnMLXOZhw0YDfv2an4Edxf4uDrh5Usktw67yg=
+github.com/xixipi-lining/iceberg-go v0.1.2/go.mod h1:Mtu9RUzhUn4g1ESKZhS/Xe4BQHt+HbArRm5CMucEXSs=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=

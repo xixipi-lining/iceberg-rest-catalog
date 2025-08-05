@@ -18,7 +18,7 @@ type Identifier struct {
 
 type ListTablesResponse struct {
 	Identifiers   []Identifier `json:"identifiers"`
-	NextPageToken *string       `json:"next-page-token,omitempty"`
+	NextPageToken *string      `json:"next-page-token,omitempty"`
 }
 
 type CreateTableRequest struct {

@@ -56,7 +56,7 @@ func Setup(log logger.Logger) *gin.Engine {
 					}
 				}
 			}
-			prefixGroup.POST("/multi-tables-commit", handler.MultiTablesCommit)
+			prefixGroup.POST("/multi-tables-commit", handler.CommitTables)
 
 			// 表重命名 API
 			prefixGroup.POST("/tables/rename", handler.RenameTable)

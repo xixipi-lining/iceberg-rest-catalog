@@ -20,7 +20,7 @@ type Config struct {
 
 type CatalogHandler struct {
 	config  Config
-	catalog catalog.Catalog 
+	catalog catalog.Catalog
 }
 
 func NewCatalogHandler(catalog catalog.Catalog) *CatalogHandler {

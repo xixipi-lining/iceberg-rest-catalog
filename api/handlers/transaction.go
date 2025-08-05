@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/apache/iceberg-go/catalog"
 	icecat "github.com/apache/iceberg-go/catalog"
+	icetbl "github.com/apache/iceberg-go/table"
 	"github.com/gin-gonic/gin"
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 )
 
-func (h *CatalogHandler) MultiTablesCommit(c *gin.Context) {
+func (h *CatalogHandler) CommitTables(c *gin.Context) {
 	log := c.MustGet("logger").(logger.Logger)
 
 	prefix := c.Param("prefix")
@@ -27,7 +27,7 @@ func (h *CatalogHandler) MultiTablesCommit(c *gin.Context) {
 		return
 	}
 
-	commits := make([]catalog.MultiTableCommit, len(req))
+	commits := make([]icetbl.TableCommit, len(req))
 	for i, r := range req {
 		ns := r.Identifier.Namespace
 		tableName := r.Identifier.Name
@@ -50,14 +50,14 @@ func (h *CatalogHandler) MultiTablesCommit(c *gin.Context) {
 			})
 			return
 		}
-		commits[i] = catalog.MultiTableCommit{
-			Table: table,
+		commits[i] = icetbl.TableCommit{
+			Table:        table,
 			Requirements: r.Requirements,
-			Updates: r.Updates,
+			Updates:      r.Updates,
 		}
 	}
 
-	if err := h.catalog.MultiTableCommit(c.Request.Context(), commits, nil); err != nil {
+	if err := h.catalog.CommitTables(c.Request.Context(), commits); err != nil {
 		log.Errorf("failed to commit tables: %w", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
