@@ -5,29 +5,14 @@ import (
 	"net/http"
 	"strings"
 
-	icecat "github.com/apache/iceberg-go/catalog"
+	"github.com/apache/iceberg-go/catalog"
 	"github.com/gin-gonic/gin"
 )
 
 func (h *CatalogHandler) ListNamespaces(c *gin.Context) {
-	type listNamespacesRequest struct {
-		Prefix    string  `uri:"prefix" binding:"required"`
-		Parent    *string `form:"parent"`
-		PageToken *string `form:"pageToken"`
-		PageSize  *int    `form:"pageSize"`
-	}
+	log := getLogger(c)
 
-	type listNamespacesResponse struct {
-		Namespaces    [][]string `json:"namespaces"`
-		NextPageToken *string    `json:"next-page-token"`
-	}
-	var req listNamespacesRequest
-	if err := c.BindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrBadRequest,
-		})
-		return
-	}
+	var req ListNamespacesRequest
 	if err := c.BindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: ErrBadRequest,
@@ -42,42 +27,29 @@ func (h *CatalogHandler) ListNamespaces(c *gin.Context) {
 
 	namespaces, err := h.catalog.ListNamespaces(c.Request.Context(), parent)
 	if err != nil {
-		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
+			return
 		}
+		log.Errorf("failed to list namespaces: %s", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
 		})
 		return
 	}
 
-	resp := listNamespacesResponse{
+	resp := ListNamespacesResponse{
 		Namespaces: namespaces,
 	}
 	c.JSON(http.StatusOK, resp)
 }
 
 func (h *CatalogHandler) CreateNamespace(c *gin.Context) {
-	type createNamespaceRequest struct {
-		Prefix     string            `uri:"prefix" binding:"required"`
-		Namespace  []string          `json:"namespace" binding:"required"`
-		Properties map[string]string `json:"properties"`
-	}
+	log := getLogger(c)
 
-	type createNamespaceResponse struct {
-		Namespace  []string          `json:"namespace"`
-		Properties map[string]string `json:"properties"`
-	}
-
-	var req createNamespaceRequest
-	if err := c.BindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrBadRequest,
-		})
-		return
-	}
+	var req CreateNamespaceRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: ErrBadRequest,
@@ -86,77 +58,51 @@ func (h *CatalogHandler) CreateNamespace(c *gin.Context) {
 	}
 	err := h.catalog.CreateNamespace(c.Request.Context(), req.Namespace, req.Properties)
 	if err != nil {
-		if errors.Is(err, icecat.ErrNamespaceAlreadyExists) {
+		if errors.Is(err, catalog.ErrNamespaceAlreadyExists) {
 			c.JSON(http.StatusConflict, ErrorResponse{
 				Error: ErrNamespaceAlreadyExists,
 			})
 			return
 		}
+		log.Errorf("failed to create namespace: %s", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
 		})
 		return
 	}
-	c.JSON(http.StatusOK, createNamespaceResponse{
-		Namespace:  req.Namespace,
-		Properties: req.Properties,
-	})
+	c.JSON(http.StatusOK, CreateNamespaceResponse(req))
 }
 
 func (h *CatalogHandler) LoadNamespaceMetadata(c *gin.Context) {
-	type loadNamespaceMetadataRequest struct {
-		Prefix    string `uri:"prefix" binding:"required"`
-		Namespace string `uri:"namespace" binding:"required"`
-	}
+	log := getLogger(c)
 
-	type loadNamespaceMetadataResponse struct {
-		Namespace  []string          `json:"namespace"`
-		Properties map[string]string `json:"properties"`
-	}
-
-	var req loadNamespaceMetadataRequest
-	if err := c.BindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrBadRequest,
-		})
-		return
-	}
-	namespace := strings.Split(req.Namespace, namespaceSeparator)
+	namespace := strings.Split(c.Param("namespace"), namespaceSeparator)
 	properties, err := h.catalog.LoadNamespaceProperties(c.Request.Context(), namespace)
 	if err != nil {
-		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
 			return
 		}
+		log.Errorf("failed to load namespace metadata: %s", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
 		})
 		return
 	}
-	c.JSON(http.StatusOK, loadNamespaceMetadataResponse{
+	c.JSON(http.StatusOK, LoadNamespaceMetadataResponse{
 		Namespace:  namespace,
 		Properties: properties,
 	})
 }
 
 func (h *CatalogHandler) NamespaceExists(c *gin.Context) {
-	type namespaceExistsRequest struct {
-		Prefix    string `uri:"prefix" binding:"required"`
-		Namespace string `uri:"namespace" binding:"required"`
-	}
-
-	var req namespaceExistsRequest
-	if err := c.BindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrBadRequest,
-		})
-		return
-	}
-	namespace := strings.Split(req.Namespace, namespaceSeparator)
+	log := getLogger(c)
+	namespace := strings.Split(c.Param("namespace"), namespaceSeparator)
 	exists, err := h.catalog.CheckNamespaceExists(c.Request.Context(), namespace)
 	if err != nil {
+		log.Errorf("failed to check namespace exists: %s", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
 		})
@@ -172,32 +118,23 @@ func (h *CatalogHandler) NamespaceExists(c *gin.Context) {
 }
 
 func (h *CatalogHandler) DropNamespace(c *gin.Context) {
-	type dropNamespaceRequest struct {
-		Prefix    string `uri:"prefix" binding:"required"`
-		Namespace string `uri:"namespace" binding:"required"`
-	}
-
-	var req dropNamespaceRequest
-	if err := c.BindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrBadRequest,
-		})
-	}
-	namespace := strings.Split(req.Namespace, namespaceSeparator)
+	log := getLogger(c)
+	namespace := strings.Split(c.Param("namespace"), namespaceSeparator)
 	err := h.catalog.DropNamespace(c.Request.Context(), namespace)
 	if err != nil {
-		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
 			return
 		}
-		if errors.Is(err, icecat.ErrNamespaceNotEmpty) {
+		if errors.Is(err, catalog.ErrNamespaceNotEmpty) {
 			c.JSON(http.StatusConflict, ErrorResponse{
 				Error: ErrNamespaceNotEmpty,
 			})
 			return
 		}
+		log.Errorf("failed to drop namespace: %s", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
 		})
@@ -207,26 +144,11 @@ func (h *CatalogHandler) DropNamespace(c *gin.Context) {
 }
 
 func (h *CatalogHandler) UpdateProperties(c *gin.Context) {
-	type updatePropertiesRequest struct {
-		Prefix    string            `uri:"prefix" binding:"required"`
-		Namespace string            `uri:"namespace" binding:"required"`
-		Removals  []string          `json:"removals"`
-		Updates   map[string]string `json:"updates"`
-	}
+	log := getLogger(c)
 
-	type updatePropertiesResponse struct {
-		Updated []string `json:"updated"`
-		Removed []string `json:"removed"`
-		Missing []string `json:"missing"`
-	}
+	namespace := strings.Split(c.Param("namespace"), namespaceSeparator)
 
-	var req updatePropertiesRequest
-	if err := c.BindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: ErrBadRequest,
-		})
-		return
-	}
+	var req UpdatePropertiesRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: ErrBadRequest,
@@ -243,21 +165,21 @@ func (h *CatalogHandler) UpdateProperties(c *gin.Context) {
 		}
 	}
 
-	namespace := strings.Split(req.Namespace, namespaceSeparator)
 	summary, err := h.catalog.UpdateNamespaceProperties(c.Request.Context(), namespace, req.Removals, req.Updates)
 	if err != nil {
-		if errors.Is(err, icecat.ErrNoSuchNamespace) {
+		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error: ErrNamespaceNotFound,
 			})
 			return
 		}
+		log.Errorf("failed to update namespace properties: %s", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrInternalServerError,
 		})
 		return
 	}
-	c.JSON(http.StatusOK, updatePropertiesResponse{
+	c.JSON(http.StatusOK, UpdatePropertiesResponse{
 		Updated: summary.Updated,
 		Removed: summary.Removed,
 		Missing: summary.Missing,

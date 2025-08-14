@@ -16,6 +16,44 @@ type Identifier struct {
 	Name      string    `json:"name"`
 }
 
+type ListNamespacesRequest struct {
+	Parent    *string `form:"parent"`
+	PageToken *string `form:"pageToken"`
+	PageSize  *int    `form:"pageSize"`
+}
+
+type ListNamespacesResponse struct {
+	Namespaces    [][]string `json:"namespaces"`
+	NextPageToken *string    `json:"next-page-token"`
+}
+
+type CreateNamespaceRequest struct {
+	Namespace  []string          `json:"namespace" binding:"required"`
+	Properties map[string]string `json:"properties"`
+}
+
+type CreateNamespaceResponse CreateNamespaceRequest
+
+type LoadNamespaceMetadataResponse struct {
+	Namespace  []string          `json:"namespace"`
+	Properties map[string]string `json:"properties"`
+}
+
+type UpdatePropertiesRequest struct {
+	Removals []string          `json:"removals"`
+	Updates  map[string]string `json:"updates"`
+}
+
+type UpdatePropertiesResponse struct {
+	Updated []string `json:"updated"`
+	Removed []string `json:"removed"`
+	Missing []string `json:"missing"`
+}
+type ListTablesRequest struct {
+	PageToken *string `form:"pageToken"`
+	PageSize  *int    `form:"pageSize"`
+}
+
 type ListTablesResponse struct {
 	Identifiers   []Identifier `json:"identifiers"`
 	NextPageToken *string      `json:"next-page-token,omitempty"`
@@ -38,9 +76,9 @@ type LoadTableResponse struct {
 }
 
 type UpdateTableRequest struct {
-	Identifier   Identifier          `json:"identifier"`
-	Requirements []table.Requirement `json:"requirements"`
-	Updates      []table.Update      `json:"updates"`
+	Identifier   Identifier         `json:"identifier"`
+	Requirements table.Requirements `json:"requirements"`
+	Updates      table.Updates      `json:"updates"`
 }
 
 type UpdateTableResponse struct {

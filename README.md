@@ -1,3 +1,3 @@
 # iceberg-rest-catalog
 
-iceberg rest spec version: 0.14.1
+The current project depends on iceberg-go, and the version of the iceberg rest spec that iceberg-go depends on is 0.14.1.

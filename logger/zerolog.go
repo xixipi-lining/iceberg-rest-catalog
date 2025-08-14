@@ -11,9 +11,9 @@ type Config struct {
 	Debug      bool   `yaml:"debug"`
 	FileName   string `yaml:"file-name"`
 	MaxSize    int    `yaml:"max-size"`
-	MaxBackups int  `yaml:"max-backups"`
-	MaxAge     int  `yaml:"max-age"`
-	Compress   bool `yaml:"compress"`
+	MaxBackups int    `yaml:"max-backups"`
+	MaxAge     int    `yaml:"max-age"`
+	Compress   bool   `yaml:"compress"`
 }
 
 func NewLogger(cfg *Config) Logger {
@@ -23,6 +23,8 @@ func NewLogger(cfg *Config) Logger {
 	}
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	// Set caller skip frame count to skip the wrapper layer
+	zerolog.CallerSkipFrameCount = 3
 
 	writer := zerolog.MultiLevelWriter(os.Stdout)
 	if cfg.FileName != "" {
@@ -36,7 +38,7 @@ func NewLogger(cfg *Config) Logger {
 		writer = zerolog.MultiLevelWriter(lj)
 	}
 
-	return newLogger(zerolog.New(writer).With().Timestamp().Logger())
+	return newLogger(zerolog.New(writer).With().Timestamp().Caller().Logger())
 }
 
 type zerologLogger struct {

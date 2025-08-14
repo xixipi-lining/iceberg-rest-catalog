@@ -3,9 +3,9 @@ catalog:
     type: rest
     uri: "http://localhost:8181"
 
-  sql:
+  default:
     type: sql
-    uri: sqlite:////tmp/iceberg.db
+    uri: ":memory:"
     sql.driver: sqlite3
     sql.dialect: sqlite
     init_catalog_tables: true

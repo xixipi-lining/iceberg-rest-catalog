@@ -3,18 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/apache/iceberg-go"
 	"github.com/apache/iceberg-go/catalog"
 	_ "github.com/apache/iceberg-go/catalog/glue"
 	_ "github.com/apache/iceberg-go/catalog/rest"
 	_ "github.com/apache/iceberg-go/catalog/sql"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/oklog/run"
 	"github.com/xixipi-lining/iceberg-rest-catalog/api/handlers"
+	"github.com/xixipi-lining/iceberg-rest-catalog/api/middleware"
 	"github.com/xixipi-lining/iceberg-rest-catalog/api/router"
 	"github.com/xixipi-lining/iceberg-rest-catalog/logger"
 	"gopkg.in/yaml.v3"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -23,15 +31,14 @@ const (
 
 type Config struct {
 	DefaultCatalog string                        `yaml:"default-catalog"`
-	Catalogs       map[string]iceberg.Properties `yaml:"catalogs"`
-	
+	Catalogs       map[string]iceberg.Properties `yaml:"catalog"`
+
 	ServerConfig handlers.Config `yaml:"server"`
 
 	LogConfig logger.Config `yaml:"log"`
-	Port int `yaml:"port"`
-	Host string `yaml:"host"`
+	Port      int           `yaml:"port"`
+	Host      string        `yaml:"host"`
 }
-
 
 func loadConfig(configPath string) (*Config, error) {
 	var path string
@@ -53,12 +60,12 @@ func loadConfig(configPath string) (*Config, error) {
 	cfg := Config{
 		DefaultCatalog: "default",
 		LogConfig: logger.Config{
-			Debug: true,
-			MaxSize: 100,
+			Debug:    true,
+			MaxSize:  100,
 			Compress: false,
 		},
 		ServerConfig: handlers.Config{
-			Defaults: map[string]string{},
+			Defaults:  map[string]string{},
 			Overrides: map[string]string{},
 		},
 		Port: 8080,
@@ -99,7 +106,35 @@ func main() {
 
 	handler := handlers.NewCatalogHandler(cat, cfg.ServerConfig)
 
-	router := router.Setup(logger.NewLogger(&cfg.LogConfig), handler)
+	log := logger.NewLogger(&cfg.LogConfig)
 
-	router.Run(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
+	engine := gin.New()
+	engine.Use(middleware.Logger(log))
+	engine.Use(cors.Default())
+	engine.Use(gin.Recovery())
+
+	router := router.Setup(engine, handler)
+
+	svc := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Handler: router,
+	}
+
+	g := &run.Group{}
+
+	g.Add(func() error {
+		return svc.ListenAndServe()
+	}, func(err error) {
+		if err := svc.Shutdown(context.Background()); err != nil {
+			log.Errorf("failed to shutdown: %s", err)
+		}
+	})
+
+	g.Add(run.SignalHandler(context.Background(), syscall.SIGINT, syscall.SIGTERM))
+
+	if err := g.Run(); err != nil {
+		log.Errorf("failed to run: %s", err)
+		os.Exit(1)
+	}
+
 }
