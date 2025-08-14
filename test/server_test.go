@@ -19,12 +19,11 @@ import (
 	"github.com/xixipi-lining/iceberg-rest-catalog/api/router"
 )
 
-// setupTestServer 创建一个测试HTTP服务器
+// setupTestServer creates a test HTTP server
 func setupTestServer(t *testing.T) (*httptest.Server, *rest.Catalog) {
-	// 创建内存SQLite catalog作为后端
+	// Create in-memory SQLite catalog as backend
 	backendCatalog, err := catalog.Load(context.Background(), "test", iceberg.Properties{
 		"type":                "sql",
-		"uri":                 ":memory:",
 		"sql.driver":          "sqlite3",
 		"sql.dialect":         "sqlite",
 		"init_catalog_tables": "true",
@@ -32,26 +31,26 @@ func setupTestServer(t *testing.T) (*httptest.Server, *rest.Catalog) {
 	})
 	require.NoError(t, err)
 
-	// 创建handler
+	// Create handler
 	config := handlers.Config{
 		Defaults:  map[string]string{"warehouse": "/tmp/warehouse"},
 		Overrides: map[string]string{},
 	}
 	handler := handlers.NewCatalogHandler(backendCatalog, config)
 
-	// 设置Gin引擎
+	// Setup Gin engine
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	engine.Use(cors.Default())
 	engine.Use(gin.Recovery())
 
-	// 设置路由
+	// Setup routes
 	router.Setup(engine, handler)
 
-	// 创建测试服务器
+	// Create test server
 	server := httptest.NewServer(engine)
 
-	// 创建REST客户端
+	// Create REST client
 	restCatalog, err := rest.NewCatalog(context.Background(), "test-client", server.URL)
 	require.NoError(t, err)
 
@@ -62,7 +61,7 @@ func TestServerConfig(t *testing.T) {
 	server, restCatalog := setupTestServer(t)
 	defer server.Close()
 
-	// 测试catalog基本属性
+	// Test catalog basic properties
 	assert.Equal(t, "test-client", restCatalog.Name())
 	assert.Equal(t, catalog.REST, restCatalog.CatalogType())
 }
@@ -74,7 +73,7 @@ func TestNamespaceOperations(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("CreateNamespace", func(t *testing.T) {
-		// 创建namespace
+		// Create namespace
 		namespace := table.Identifier{"test_namespace"}
 		props := iceberg.Properties{
 			"description": "Test namespace",
@@ -86,26 +85,26 @@ func TestNamespaceOperations(t *testing.T) {
 	})
 
 	t.Run("ListNamespaces", func(t *testing.T) {
-		// 列出namespaces
+		// List namespaces
 		namespaces, err := restCatalog.ListNamespaces(ctx, nil)
 		require.NoError(t, err)
 		assert.Contains(t, namespaces, table.Identifier{"test_namespace"})
 	})
 
 	t.Run("CheckNamespaceExists", func(t *testing.T) {
-		// 检查namespace是否存在
+		// Check if namespace exists
 		exists, err := restCatalog.CheckNamespaceExists(ctx, table.Identifier{"test_namespace"})
 		require.NoError(t, err)
 		assert.True(t, exists)
 
-		// 检查不存在的namespace
+		// Check non-existent namespace
 		exists, err = restCatalog.CheckNamespaceExists(ctx, table.Identifier{"non_existent"})
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
 
 	t.Run("LoadNamespaceProperties", func(t *testing.T) {
-		// 加载namespace属性
+		// Load namespace properties
 		props, err := restCatalog.LoadNamespaceProperties(ctx, table.Identifier{"test_namespace"})
 		require.NoError(t, err)
 		assert.Equal(t, "Test namespace", props["description"])
@@ -113,7 +112,7 @@ func TestNamespaceOperations(t *testing.T) {
 	})
 
 	t.Run("UpdateNamespaceProperties", func(t *testing.T) {
-		// 更新namespace属性
+		// Update namespace properties
 		updates := iceberg.Properties{
 			"description": "Updated test namespace",
 			"new_prop":    "new_value",
@@ -126,7 +125,7 @@ func TestNamespaceOperations(t *testing.T) {
 		assert.Contains(t, summary.Updated, "new_prop")
 		assert.Contains(t, summary.Removed, "owner")
 
-		// 验证更新结果
+		// Verify update results
 		props, err := restCatalog.LoadNamespaceProperties(ctx, table.Identifier{"test_namespace"})
 		require.NoError(t, err)
 		assert.Equal(t, "Updated test namespace", props["description"])
@@ -136,8 +135,8 @@ func TestNamespaceOperations(t *testing.T) {
 	})
 
 	t.Run("DropNamespace", func(t *testing.T) {
-		// 删除namespace (在table测试后执行)
-		// 这个测试会在TestTableOperations之后执行
+		// Delete namespace (execute after table tests)
+		// This test will be executed after TestTableOperations
 	})
 }
 
@@ -147,12 +146,12 @@ func TestTableOperations(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 先创建namespace
+	// First create namespace
 	namespace := table.Identifier{"test_namespace"}
 	err := restCatalog.CreateNamespace(ctx, namespace, iceberg.Properties{})
 	require.NoError(t, err)
 
-	// 创建测试schema
+	// Create test schema
 	fields := []iceberg.NestedField{
 		{ID: 1, Name: "id", Type: iceberg.PrimitiveTypes.Int64, Required: true},
 		{ID: 2, Name: "name", Type: iceberg.PrimitiveTypes.String, Required: false},
@@ -163,7 +162,7 @@ func TestTableOperations(t *testing.T) {
 	tableIdent := table.Identifier{"test_namespace", "test_table"}
 
 	t.Run("CreateTable", func(t *testing.T) {
-		// 创建table
+		// Create table
 		props := iceberg.Properties{
 			"description": "Test table",
 		}
@@ -178,19 +177,19 @@ func TestTableOperations(t *testing.T) {
 	})
 
 	t.Run("CheckTableExists", func(t *testing.T) {
-		// 检查table是否存在
+		// Check if table exists
 		exists, err := restCatalog.CheckTableExists(ctx, tableIdent)
 		require.NoError(t, err)
 		assert.True(t, exists)
 
-		// 检查不存在的table
+		// Check non-existent table
 		exists, err = restCatalog.CheckTableExists(ctx, table.Identifier{"test_namespace", "non_existent"})
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
 
 	t.Run("LoadTable", func(t *testing.T) {
-		// 加载table
+		// Load table
 		tbl, err := restCatalog.LoadTable(ctx, tableIdent, nil)
 		require.NoError(t, err)
 		assert.Equal(t, tableIdent, tbl.Identifier())
@@ -199,7 +198,7 @@ func TestTableOperations(t *testing.T) {
 	})
 
 	t.Run("ListTables", func(t *testing.T) {
-		// 列出tables
+		// List tables
 		var tables []table.Identifier
 		for tbl, err := range restCatalog.ListTables(ctx, namespace) {
 			require.NoError(t, err)
@@ -209,7 +208,7 @@ func TestTableOperations(t *testing.T) {
 	})
 
 	t.Run("UpdateTable", func(t *testing.T) {
-		// 更新table - 添加新字段
+		// Update table - add new field
 		requirements := []table.Requirement{
 			table.AssertCurrentSchemaID(0),
 		}
@@ -226,34 +225,34 @@ func TestTableOperations(t *testing.T) {
 	})
 
 	t.Run("RenameTable", func(t *testing.T) {
-		// 重命名table
+		// Rename table
 		newIdent := table.Identifier{"test_namespace", "renamed_table"}
 
 		renamedTable, err := restCatalog.RenameTable(ctx, tableIdent, newIdent)
 		require.NoError(t, err)
 		assert.Equal(t, newIdent, renamedTable.Identifier())
 
-		// 验证原table不存在
+		// Verify original table doesn't exist
 		exists, err := restCatalog.CheckTableExists(ctx, tableIdent)
 		require.NoError(t, err)
 		assert.False(t, exists)
 
-		// 验证新table存在
+		// Verify new table exists
 		exists, err = restCatalog.CheckTableExists(ctx, newIdent)
 		require.NoError(t, err)
 		assert.True(t, exists)
 
-		// 为后续测试重命名回来
+		// Rename back for subsequent tests
 		_, err = restCatalog.RenameTable(ctx, newIdent, tableIdent)
 		require.NoError(t, err)
 	})
 
 	t.Run("DropTable", func(t *testing.T) {
-		// 删除table
+		// Drop table
 		err := restCatalog.DropTable(ctx, tableIdent)
 		require.NoError(t, err)
 
-		// 验证table不存在
+		// Verify table doesn't exist
 		exists, err := restCatalog.CheckTableExists(ctx, tableIdent)
 		require.NoError(t, err)
 		assert.False(t, exists)
@@ -267,38 +266,38 @@ func TestErrorHandling(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NonExistentNamespace", func(t *testing.T) {
-		// 尝试操作不存在的namespace
+		// Try to operate on non-existent namespace
 		_, err := restCatalog.LoadNamespaceProperties(ctx, table.Identifier{"non_existent"})
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, catalog.ErrNoSuchNamespace)
 	})
 
 	t.Run("NonExistentTable", func(t *testing.T) {
-		// 先创建namespace
+		// First create namespace
 		namespace := table.Identifier{"test_namespace"}
 		err := restCatalog.CreateNamespace(ctx, namespace, iceberg.Properties{})
 		require.NoError(t, err)
 
-		// 尝试加载不存在的table
+		// Try to load non-existent table
 		_, err = restCatalog.LoadTable(ctx, table.Identifier{"test_namespace", "non_existent"}, nil)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, catalog.ErrNoSuchTable)
 	})
 
 	t.Run("DuplicateNamespace", func(t *testing.T) {
-		// 创建namespace
+		// Create namespace
 		namespace := table.Identifier{"duplicate_test"}
 		err := restCatalog.CreateNamespace(ctx, namespace, iceberg.Properties{})
 		require.NoError(t, err)
 
-		// 尝试创建相同的namespace
+		// Try to create same namespace
 		err = restCatalog.CreateNamespace(ctx, namespace, iceberg.Properties{})
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, catalog.ErrNamespaceAlreadyExists)
 	})
 
 	t.Run("DuplicateTable", func(t *testing.T) {
-		// 创建schema和table
+		// Create schema and table
 		schema := iceberg.NewSchema(1,
 			[]iceberg.NestedField{
 				{ID: 1, Name: "id", Type: iceberg.PrimitiveTypes.Int64, Required: true},
@@ -309,7 +308,7 @@ func TestErrorHandling(t *testing.T) {
 		_, err := restCatalog.CreateTable(ctx, tableIdent, schema)
 		require.NoError(t, err)
 
-		// 尝试创建相同的table
+		// Try to create same table
 		_, err = restCatalog.CreateTable(ctx, tableIdent, schema)
 		assert.Error(t, err)
 	})
@@ -321,25 +320,25 @@ func TestCleanup(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 清理所有测试数据
+	// Clean up all test data
 	t.Run("CleanupNamespaces", func(t *testing.T) {
 		namespaces, err := restCatalog.ListNamespaces(ctx, nil)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
-			// 先删除namespace下的所有tables
+			// First delete all tables under namespace
 			for tbl, err := range restCatalog.ListTables(ctx, ns) {
 				require.NoError(t, err)
 				err = restCatalog.DropTable(ctx, tbl)
 				require.NoError(t, err)
 			}
 
-			// 然后删除namespace
+			// Then delete namespace
 			err := restCatalog.DropNamespace(ctx, ns)
 			require.NoError(t, err)
 		}
 
-		// 验证所有namespace都被删除
+		// Verify all namespaces are deleted
 		namespaces, err = restCatalog.ListNamespaces(ctx, nil)
 		require.NoError(t, err)
 		assert.Empty(t, namespaces)

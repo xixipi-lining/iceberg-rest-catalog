@@ -1,97 +1,86 @@
 .PHONY: build run test clean deps fmt lint docker-build
 
-# 应用名称
+# Application name
 APP_NAME = iceberg-rest-catalog
 
-# 构建目录
+# Build directory
 BUILD_DIR = build
 
-# Go 相关变量
+# Go related variables
 GO_VERSION = 1.24.4
 GOOS = linux
 GOARCH = amd64
 
-# 默认目标
+# Default target
 all: deps fmt lint test build
 
-# 安装依赖
+# Install dependencies
 deps:
 	@echo "Installing dependencies..."
 	go mod tidy
 	go mod download
 
-# 构建应用
+# Build application
 build:
 	@echo "Building application..."
 	mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags="-w -s" -o $(BUILD_DIR)/$(APP_NAME) cmd/server/main.go
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags="-w -s" -o $(BUILD_DIR)/$(APP_NAME) main.go
 
-# 本地运行
+# Run locally
 run:
 	@echo "Running application..."
-	go run cmd/server/main.go
+	go run main.go
 
-# 运行测试
+# Run tests
 test:
 	@echo "Running tests..."
 	go test -v ./...
 
-# 运行测试并生成覆盖率报告
+# Run tests with coverage report
 test-coverage:
 	@echo "Running tests with coverage..."
 	go test -v -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
 
-# 格式化代码
+# Format code
 fmt:
 	@echo "Formatting code..."
 	go fmt ./...
 
-# 代码检查
+# Code linting
 lint:
 	@echo "Running linter..."
 	golangci-lint run ./...
 
-# 清理构建产物
+# Clean build artifacts
 clean:
 	@echo "Cleaning up..."
 	rm -rf $(BUILD_DIR)
 	rm -f coverage.out coverage.html
 
-# Docker 构建
+# Docker build
 docker-build:
 	@echo "Building Docker image..."
 	docker build -t $(APP_NAME):latest .
 
-# Docker 运行
+# Docker run
 docker-run:
 	@echo "Running Docker container..."
 	docker run -p 8080:8080 $(APP_NAME):latest
 
-# 开发环境启动
-dev:
-	@echo "Starting development server..."
-	air
 
-# 生成API文档
-docs:
-	@echo "Generating API documentation..."
-	swag init -g cmd/server/main.go -o docs/swagger
-
-# 安装开发工具
+# cmd/server/Install development tools
 install-tools:
 	@echo "Installing development tools..."
-	go install github.com/cosmtrek/air@latest
-	go install github.com/swaggo/swag/cmd/swag@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-# 检查代码质量
+# Check code quality
 quality: fmt lint test
 
-# 发布准备
+# Prepare for release
 release: clean quality build
 
-# 帮助信息
+# Help information
 help:
 	@echo "Available targets:"
 	@echo "  deps          - Install dependencies"
@@ -104,8 +93,6 @@ help:
 	@echo "  clean         - Clean build artifacts"
 	@echo "  docker-build  - Build Docker image"
 	@echo "  docker-run    - Run Docker container"
-	@echo "  dev           - Start development server with hot reload"
-	@echo "  docs          - Generate API documentation"
 	@echo "  install-tools - Install development tools"
 	@echo "  quality       - Run code quality checks"
 	@echo "  release       - Prepare for release"

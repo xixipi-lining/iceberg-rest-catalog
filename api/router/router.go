@@ -5,9 +5,9 @@ import (
 	"github.com/xixipi-lining/iceberg-rest-catalog/api/handlers"
 )
 
-// Setup 设置路由
+// Setup configures routes
 func Setup(engine *gin.Engine, handler *handlers.CatalogHandler) *gin.Engine {
-	// 创建处理器
+	// Create handlers
 
 	v1 := engine.Group("/v1")
 	{
@@ -25,7 +25,7 @@ func Setup(engine *gin.Engine, handler *handlers.CatalogHandler) *gin.Engine {
 				namespace.DELETE("", handler.DropNamespace)
 				namespace.POST("/properties", handler.UpdateProperties)
 
-				// 表 API
+				// Table API
 				tables := namespace.Group("/tables")
 				{
 					tables.GET("", handler.ListTables)
@@ -42,11 +42,11 @@ func Setup(engine *gin.Engine, handler *handlers.CatalogHandler) *gin.Engine {
 			}
 		}
 
-		// 表重命名 API
+		// Table rename API
 		v1.POST("/tables/rename", handler.RenameTable)
 	}
 
-	// 健康检查
+	// Health check
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
