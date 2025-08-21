@@ -104,7 +104,12 @@ func main() {
 		panic(err)
 	}
 
-	handler := handlers.NewCatalogHandler(cat, cfg.ServerConfig)
+	txCat, ok := cat.(catalog.TransactionCatalog)
+	if !ok {
+		panic("catalog is not a transaction catalog")
+	}
+
+	handler := handlers.NewCatalogHandler(cfg.ServerConfig, txCat)
 
 	log := logger.NewLogger(&cfg.LogConfig)
 

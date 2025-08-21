@@ -31,12 +31,17 @@ func setupTestServer(t *testing.T) (*httptest.Server, *rest.Catalog) {
 	})
 	require.NoError(t, err)
 
+	txCat, ok := backendCatalog.(catalog.TransactionCatalog)
+	if !ok {
+		t.Fatal("catalog is not a transaction catalog")
+	}
+
 	// Create handler
 	config := handlers.Config{
 		Defaults:  map[string]string{"warehouse": "/tmp/warehouse"},
 		Overrides: map[string]string{},
 	}
-	handler := handlers.NewCatalogHandler(backendCatalog, config)
+	handler := handlers.NewCatalogHandler(config, txCat)
 
 	// Setup Gin engine
 	gin.SetMode(gin.TestMode)

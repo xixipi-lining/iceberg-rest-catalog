@@ -44,6 +44,11 @@ func Setup(engine *gin.Engine, handler *handlers.CatalogHandler) *gin.Engine {
 
 		// Table rename API
 		v1.POST("/tables/rename", handler.RenameTable)
+		
+		// KV Sidecar API
+		// v1.POST("/kvsidecar", handler.SetKVSidecar)
+		// v1.GET("/kvsidecar", handler.GetKVSidecar)
+		// v1.DELETE("/kvsidecar", handler.DeleteKVSidecar)
 	}
 
 	// Health check

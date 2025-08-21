@@ -18,7 +18,8 @@ type Config struct {
 
 type CatalogHandler struct {
 	config  Config
-	catalog catalog.Catalog
+	catalog catalog.TransactionCatalog
+	followers []catalog.FollowerCatalog
 }
 
 func getLogger(c *gin.Context) logger.Logger {
@@ -31,8 +32,8 @@ func getLogger(c *gin.Context) logger.Logger {
 	return log.(logger.Logger)
 }
 
-func NewCatalogHandler(catalog catalog.Catalog, config Config) *CatalogHandler {
-	return &CatalogHandler{catalog: catalog, config: config}
+func NewCatalogHandler(config Config, catalog catalog.TransactionCatalog, followers ...catalog.FollowerCatalog) *CatalogHandler {
+	return &CatalogHandler{catalog: catalog, config: config, followers: followers}
 }
 
 func (h *CatalogHandler) GetConfig(c *gin.Context) {
