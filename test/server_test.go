@@ -195,7 +195,7 @@ func TestTableOperations(t *testing.T) {
 
 	t.Run("LoadTable", func(t *testing.T) {
 		// Load table
-		tbl, err := restCatalog.LoadTable(ctx, tableIdent, nil)
+		tbl, err := restCatalog.LoadTable(ctx, tableIdent)
 		require.NoError(t, err)
 		assert.Equal(t, tableIdent, tbl.Identifier())
 		assert.Equal(t, 3, len(tbl.Schema().Fields()))
@@ -284,7 +284,7 @@ func TestErrorHandling(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to load non-existent table
-		_, err = restCatalog.LoadTable(ctx, table.Identifier{"test_namespace", "non_existent"}, nil)
+		_, err = restCatalog.LoadTable(ctx, table.Identifier{"test_namespace", "non_existent"})
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, catalog.ErrNoSuchTable)
 	})

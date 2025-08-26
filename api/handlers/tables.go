@@ -169,7 +169,7 @@ func (h *CatalogHandler) UpdateTable(c *gin.Context) {
 		return
 	}
 
-	table, err := h.catalog.LoadTable(c.Request.Context(), append(namespace, tableName), nil)
+	table, err := h.catalog.LoadTable(c.Request.Context(), append(namespace, tableName))
 	if err != nil {
 		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
@@ -190,7 +190,7 @@ func (h *CatalogHandler) UpdateTable(c *gin.Context) {
 		return
 	}
 
-	metadata, metadataLoc, err := h.catalog.CommitTable(c.Request.Context(), table, req.Requirements, req.Updates)
+	metadata, metadataLoc, err := h.catalog.CommitTable(c.Request.Context(), table.Identifier(), req.Requirements, req.Updates)
 	if err != nil {
 		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
@@ -234,7 +234,7 @@ func (h *CatalogHandler) LoadTable(c *gin.Context) {
 
 	tableName := c.Param("table")
 
-	table, err := h.catalog.LoadTable(c.Request.Context(), append(namespace, tableName), nil)
+	table, err := h.catalog.LoadTable(c.Request.Context(), append(namespace, tableName))
 	if err != nil {
 		if errors.Is(err, catalog.ErrNoSuchNamespace) {
 			c.JSON(http.StatusNotFound, ErrorResponse{

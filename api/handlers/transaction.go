@@ -89,7 +89,7 @@ func (h *CatalogHandler) Transaction(c *gin.Context) {
 		}
 		if r.UpdateTable != nil {
 			ident := append(r.UpdateTable.Identifier.Namespace, r.UpdateTable.Identifier.Name)
-			table, err := h.catalog.LoadTable(c.Request.Context(), ident, nil)
+			table, err := h.catalog.LoadTable(c.Request.Context(), ident)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, ErrorResponse{
 					Error: ErrInternalServerError,
