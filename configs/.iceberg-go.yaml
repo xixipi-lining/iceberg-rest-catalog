@@ -1,13 +1,14 @@
 catalog:
   default:
-    type: sql
-    sql.driver: sqlite3
-    sql.dialect: sqlite
-    init_catalog_tables: true
+    type: dynamodb
     s3.region: us-east-1
-    s3.endpoint: http://localhost:9000
-    s3.access-key-id: admin
-    s3.secret-access-key: password
+
+  glue:
+    type: glue
+    glue.region: us-east-1
+
+follower-catalogs:
+  - glue
 
 server:
   defaults:

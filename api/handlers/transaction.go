@@ -88,16 +88,8 @@ func (h *CatalogHandler) Transaction(c *gin.Context) {
 			})
 		}
 		if r.UpdateTable != nil {
-			ident := append(r.UpdateTable.Identifier.Namespace, r.UpdateTable.Identifier.Name)
-			table, err := h.catalog.LoadTable(c.Request.Context(), ident)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, ErrorResponse{
-					Error: ErrInternalServerError,
-				})
-				return
-			}
 			reqs = append(reqs, &catalog.CommitTableRequest{
-				Table: table,
+				Identifier: append(r.UpdateTable.Identifier.Namespace, r.UpdateTable.Identifier.Name),
 				Updates: r.UpdateTable.Updates,
 				Requirements: r.UpdateTable.Requirements,
 			})

@@ -33,6 +33,8 @@ type Config struct {
 	DefaultCatalog string                        `yaml:"default-catalog"`
 	Catalogs       map[string]iceberg.Properties `yaml:"catalog"`
 
+	FollowerCatalogs []string `yaml:"follower-catalogs"`
+
 	ServerConfig handlers.Config `yaml:"server"`
 
 	LogConfig logger.Config `yaml:"log"`
@@ -109,7 +111,24 @@ func main() {
 		panic("catalog is not a transaction catalog")
 	}
 
-	handler := handlers.NewCatalogHandler(cfg.ServerConfig, txCat)
+	fCats := make([]catalog.FollowerCatalog, len(cfg.FollowerCatalogs))
+	for i, followerCatalog := range cfg.FollowerCatalogs {
+		props, ok := cfg.Catalogs[followerCatalog]
+		if !ok {
+			panic(fmt.Sprintf("catalog %s not found", followerCatalog))
+		}
+		cat, err := catalog.Load(context.Background(), followerCatalog, props)
+		if err != nil {
+			panic(err)
+		}
+		fCat, ok := cat.(catalog.FollowerCatalog)
+		if !ok {
+			panic(fmt.Sprintf("catalog %s is not a follower catalog", followerCatalog))
+		}
+		fCats[i] = fCat
+	}
+
+	handler := handlers.NewCatalogHandler(cfg.ServerConfig, txCat, fCats...)
 
 	log := logger.NewLogger(&cfg.LogConfig)
 
